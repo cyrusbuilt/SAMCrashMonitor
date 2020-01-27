@@ -17,7 +17,7 @@ docs:
 # update .travis.yml if target boards added
 all: mkrnb1500
 
-uno megaatmega1280 megaatmega2560 micro leonardo huzzah:
+mkrnb1500:
 	PLATFORMIO_BOARD=$@ $(MAKE) build
 
 build:
