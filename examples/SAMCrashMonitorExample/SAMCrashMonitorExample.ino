@@ -14,18 +14,19 @@ void setup() {
     Serial.print(timeout);
     Serial.println(" ms.");
     
+    Serial.println();
     Serial.println(F("First test: Looping once per second for 5 seconds while feeding watchdog..."));
-    for (int i = 1; i <= 10; i++) {
+    for (int i = 1; i <= 5; i++) {
         Serial.print(F("Loop #"));
         Serial.println(i);
         delay(1000);
         SAMCrashMonitor.iAmAlive();
     }
 
+    Serial.println();
     Serial.println(F("Disabling watchdog..."));
     Serial.println();
     SAMCrashMonitor.disableWatchdog();
-    Serial.println();
 
     Serial.println(F("Second test: Exceed timeout and reset."));
     timeout = SAMCrashMonitor.enableWatchdog(4000);
