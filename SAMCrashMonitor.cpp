@@ -240,4 +240,16 @@ String SAMCrashMonitorClass::getResetDescription() {
     return result;
 }
 
+void SAMCrashMonitorClass::dump(Print &destination) {
+    int resetFlag = this->getResetCause();
+    String reason = this->getResetDescription();
+    destination.println(F("========================================="));
+    destination.println();
+    destination.print(F("Reset reason: "));
+    destination.print(resetFlag);
+    destination.print(F(", "));
+    destination.println(reason);
+    destination.println(F("========================================="));
+}
+
 SAMCrashMonitorClass SAMCrashMonitor;

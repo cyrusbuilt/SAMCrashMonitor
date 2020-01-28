@@ -1,0 +1,23 @@
+#######################################
+# Syntax Coloring Map for SAMCrashMonitor
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+SAMCrashMonitor
+SAMCrashMonitorClass
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+enableWatchdog
+disableWatchdog
+iAmAlive
+getResetCause
+getResetDescription
+dump
+
+#######################################
+# Constants (LITERAL1)
+#######################################

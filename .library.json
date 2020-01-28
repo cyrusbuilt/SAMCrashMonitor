@@ -1,0 +1,31 @@
+{
+    "name": "SAMCrashMonitor",
+    "repository": {
+        "url": "https://github.com/cyrusbuilt/SAMCrashMonitor.git",
+        "type": "git"
+    },
+    "platforms": "atmelsam",
+    "frameworks": "arduino",
+    "examples": [
+        "examples/*/*.ino"
+    ],
+    "version": "1.0.0",
+    "authors": [
+        {
+            "url": "http://cyrusbuilt.net",
+            "maintainer": true,
+            "email": "cyrusbuilt@gmail.com",
+            "name": "Cyrus Brunner"
+        }
+    ],
+    "keywords": [
+        "crash",
+        "monitor",
+        "sam",
+        "watchdog",
+        "espressif",
+        "reset"
+    ],
+    "id": null,
+    "description": "A crash monitor class that implements the SAM D21/D51 built-in watchdog and provides debug information about crashes."
+}

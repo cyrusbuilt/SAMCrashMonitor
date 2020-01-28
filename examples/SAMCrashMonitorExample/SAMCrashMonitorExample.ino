@@ -4,10 +4,9 @@
 void setup() {
     Serial.begin(9600);
     Serial.println();
-    Serial.print(F("Previous reset cause: "));
-    Serial.println(SAMCrashMonitor.getResetCause());
-    Serial.print(F("Previous reset description: "));
-    Serial.println(SAMCrashMonitor.getResetDescription());
+    SAMCrashMonitor.dump(Serial);
+    Serial.println();
+    
     Serial.println(F("Enabling watchdog."));
     int timeout = SAMCrashMonitor.enableWatchdog(4000);
     Serial.print(F("Watchdog enabled for "));
