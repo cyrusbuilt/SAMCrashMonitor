@@ -68,3 +68,12 @@ void loop() {
     }
 }
 ```
+
+## Generating API documentation
+To generate and view the API documentation run the following command from the root project folder:
+
+```bash
+make docs
+```
+
+The above command assumes you have [doxygen](http://www.doxygen.nl/) installed. The documentation will be compiled to the docs/ directory within the project structure in HTML format.
