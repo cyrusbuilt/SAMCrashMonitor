@@ -1,6 +1,47 @@
 #include "SAMCrashMonitor.h"
 #include <samd.h>
 
+
+
+static void HardFault_Handler(void) {
+    __asm volatile
+    (
+        " tst lr, #4                                                n"
+        " ite eq                                                    n"
+        " mrseq r0, msp                                             n"
+        " mrsne r0, psp                                             n"
+        " ldr r1, [r0, #24]                                         n"
+        " ldr r2, handler2_address_const                            n"
+        " bx r2                                                     n"
+        " handler2_address_const: .word prvGetRegistersFromStack    n"
+    );
+}
+
+void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress )
+{
+    /* These are volatile to try and prevent the compiler/linker optimising them
+    away as the variables never actually get used.  If the debugger won't show the
+    values of the variables, make them global my moving their declaration outside
+    of this function. */
+    uint32_t r0 = pulFaultStackAddress[0];
+    uint32_t r1 = pulFaultStackAddress[1];
+    uint32_t r2 = pulFaultStackAddress[2];
+    uint32_t r3 = pulFaultStackAddress[3];
+    uint32_t r12 = pulFaultStackAddress[4];
+    uint32_t lr = pulFaultStackAddress[5];  /* Link register. */
+    uint32_t pc = pulFaultStackAddress[6];  /* Program counter. */
+    uint32_t psr = pulFaultStackAddress[7]; /* Program status register. */
+
+    /* If we got this far, the variables contain the register values. */
+    
+    // TODO The value of most interest to us is the PC register value since it will
+    // hold the address of the instruction that was executing when the hard fault
+    // occurred (well... for precise faults it will, imprecise faults are another
+    // story). The register r0 - r3 and r12 are all part of the stack, but not sure
+    // what to do with those.
+
+}
+
 void WDT_Handler(void) {
     // ISR for watchdog early warning, DO NOT RENAME!
     #if defined(__SAMD51__)
