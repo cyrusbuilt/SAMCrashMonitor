@@ -14,12 +14,109 @@ void WDT_Handler(void) {
     WDT->INTFLAG.bit.EW  = 1;        // Clear interrupt flag
 }
 
-SAMCrashMonitorClass::SAMCrashMonitorClass() {
-    this->_initialized = false;
+// void HardFault_Handler(void) {
+//     __asm volatile
+//     (
+//         " .syntax unified\n"
+//         " tst lr, #4                                                \n"
+//         " ite eq                                                    \n"
+//         " mrseq r0, msp                                             \n"
+//         " mrsne r0, psp                                             \n"
+//         " ldr r1, [r0, #24]                                         \n"
+//         " ldr r2, handler2_address_const                            \n"
+//         " bx r2                                                     \n"
+//         " handler2_address_const: .word prvGetRegistersFromStack    \n"
+//         " .syntax divided\n"
+//     );
+// }
+
+// void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress) {
+//     // Build a crash report from the data in the registers and dump it.
+//     SAMCrashReport report;
+//     report.r0 = pulFaultStackAddress[0];
+//     report.r1 = pulFaultStackAddress[1];
+//     report.r2 = pulFaultStackAddress[2];
+//     report.r3 = pulFaultStackAddress[3];
+//     report.r12 = pulFaultStackAddress[4];
+//     report.lr = pulFaultStackAddress[5];
+//     report.pc = pulFaultStackAddress[6];
+//     report.psr = pulFaultStackAddress[7];
+//     SAMCrashMonitor::dumpCrash(report);
+// }
+
+// Use the 'naked' attribute so that C stacking is not used.
+__attribute__((naked))
+void HardFault_HandlerAsm(void){
+    /*
+    * Get the appropriate stack pointer, depending on our mode,
+    * and use it as the parameter to the C handler. This function
+    * will never return
+    */
+    __asm(
+        ".syntax unified\n"
+        "MOVS   R0, #4  \n"
+        "MOV    R1, LR  \n"
+        "TST    R0, R1  \n"
+        "BEQ    _MSP    \n"
+        "MRS    R0, PSP \n"
+        "B      HardFault_HandlerC      \n"
+        "_MSP:  \n"
+        "MRS    R0, MSP \n"
+        "B      HardFault_HandlerC      \n"
+        ".syntax divided\n"
+    );
 }
 
-void SAMCrashMonitorClass::initWatchdog() {
-    if (this->_initialized) { return; }
+/**
+ * HardFaultHandler_C:
+ * This is called from the HardFault_HandlerAsm with a pointer the Fault stack
+ * as the parameter. We can then read the values from the stack and place them
+ * into local variables for ease of reading.
+ * We then read the various Fault Status and Address Registers to help decode
+ * cause of the fault.
+ * The function ends with a BKPT instruction to force control back into the debugger
+ */
+void HardFault_HandlerC(unsigned long *hardfault_args){
+    SAMCrashReport report;
+    report.r0 = ((unsigned long)hardfault_args[0]);
+    report.r1 = ((unsigned long)hardfault_args[1]);
+    report.r2 = ((unsigned long)hardfault_args[2]);
+    report.r3 = ((unsigned long)hardfault_args[3]);
+    report.r12 = ((unsigned long)hardfault_args[4]);
+    report.lr = ((unsigned long)hardfault_args[5]);
+    report.pc = ((unsigned long)hardfault_args[6]);
+    report.psr = ((unsigned long)hardfault_args[7]);
+
+    // Configurable Fault Status Register
+    // Consists of MMSR, BFSR and UFSR
+    report.cfsr = (*((volatile unsigned long *)(0xE000ED28)));   
+                                                                                        
+    // Hard Fault Status Register
+    report.hfsr = (*((volatile unsigned long *)(0xE000ED2C)));
+
+    // Debug Fault Status Register
+    report.dfsr = (*((volatile unsigned long *)(0xE000ED30)));
+
+    // Auxiliary Fault Status Register
+    report.afsr = (*((volatile unsigned long *)(0xE000ED3C)));
+
+    // Read the Fault Address Registers. These may not contain valid values.
+    // Check BFARVALID/MMARVALID to see if they are valid values
+    // MemManage Fault Address Register
+    report.mmar = (*((volatile unsigned long *)(0xE000ED34)));
+    // Bus Fault Address Register
+    report.bfar = (*((volatile unsigned long *)(0xE000ED38)));
+
+    // Dump the whole report to Serial.
+    SAMCrashMonitor::dumpCrash(report);
+
+    NVIC_SystemReset();
+}
+
+bool SAMCrashMonitor::_initialized = false;
+
+void SAMCrashMonitor::initWatchdog() {
+    if (SAMCrashMonitor::_initialized) { return; }
 
     #ifdef __SAMD51__
         // SAMD51 WDT uses OSCULP32k as input clock now
@@ -64,10 +161,16 @@ void SAMCrashMonitorClass::initWatchdog() {
         NVIC_EnableIRQ(WDT_IRQn);
     #endif
 
-    this->_initialized = true;
+    SAMCrashMonitor::_initialized = true;
 }
 
-int SAMCrashMonitorClass::enableWatchdog(int maxPeriodMS) {
+void SAMCrashMonitor::begin() {
+    if (!SAMCrashMonitor::_initialized) {
+        SAMCrashMonitor::initWatchdog();
+    }
+}
+
+int SAMCrashMonitor::enableWatchdog(int maxPeriodMS) {
     // Enable the watchdog with a period up to the specified max period in
     // milliseconds.
 
@@ -76,10 +179,6 @@ int SAMCrashMonitorClass::enableWatchdog(int maxPeriodMS) {
 
     int     cycles;
     uint8_t bits;
-
-    if (!_initialized) {
-        this->initWatchdog();
-    }
 
     #ifdef __SAMD51__
         WDT->CTRLA.reg = 0; // Disable watchdog for config
@@ -157,13 +256,13 @@ int SAMCrashMonitorClass::enableWatchdog(int maxPeriodMS) {
     // function (later in this file) explicitly passes 'true' to get the
     // alternate behavior.
 
-    #if defined(__SAMD51__)
+    #ifdef __SAMD51__
         WDT->INTENCLR.bit.EW     = 1;    // Disable early warning interrupt
         WDT->CONFIG.bit.PER      = bits; // Set period for chip reset
         WDT->CTRLA.bit.WEN       = 0;    // Disable window mode
         while(WDT->SYNCBUSY.reg);        // Sync CTRL write
 
-        this->iAmAlive();                    // Clear watchdog interval
+        SAMCrashMonitor::iAmAlive();         // Clear watchdog interval
         WDT->CTRLA.bit.ENABLE = 1;           // Start watchdog now!
         while(WDT->SYNCBUSY.reg);
     #else
@@ -172,7 +271,7 @@ int SAMCrashMonitorClass::enableWatchdog(int maxPeriodMS) {
         WDT->CTRL.bit.WEN      = 0;         // Disable window mode
         while(WDT->STATUS.bit.SYNCBUSY);    // Sync CTRL write
 
-        this->iAmAlive();                    // Clear watchdog interval
+        SAMCrashMonitor::iAmAlive();         // Clear watchdog interval
         WDT->CTRL.bit.ENABLE = 1;            // Start watchdog now!
         while(WDT->STATUS.bit.SYNCBUSY);
     #endif
@@ -180,7 +279,7 @@ int SAMCrashMonitorClass::enableWatchdog(int maxPeriodMS) {
     return (cycles * 1000L + 512) / 1024; // WDT cycles -> ms
 }
 
-void SAMCrashMonitorClass::disableWatchdog() {
+void SAMCrashMonitor::disableWatchdog() {
     #ifdef __SAMD51__
         WDT->CTRLA.bit.ENABLE = 0;
         while(WDT->SYNCBUSY.reg);
@@ -190,7 +289,7 @@ void SAMCrashMonitorClass::disableWatchdog() {
     #endif
 }
 
-void SAMCrashMonitorClass::iAmAlive() {
+void SAMCrashMonitor::iAmAlive() {
     // Write the watchdog clear key value (0xA5) to the watchdog
     // clear register to clear the watchdog timer and reset it.
     #ifdef __SAMD51__
@@ -202,7 +301,7 @@ void SAMCrashMonitorClass::iAmAlive() {
     WDT->CLEAR.reg = WDT_CLEAR_CLEAR_KEY;
 }
 
-uint8_t SAMCrashMonitorClass::getResetCause() {
+uint8_t SAMCrashMonitor::getResetCause() {
     #ifdef __SAMD51__
         return RSTC->RCAUSE.reg;
     #else
@@ -210,8 +309,8 @@ uint8_t SAMCrashMonitorClass::getResetCause() {
     #endif
 }
 
-String SAMCrashMonitorClass::getResetDescription() {
-    uint8_t cause = this->getResetCause();
+String SAMCrashMonitor::getResetDescription() {
+    uint8_t cause = SAMCrashMonitor::getResetCause();
     String result;
     switch (cause) {
         case PM_RCAUSE_SYST:
@@ -240,16 +339,44 @@ String SAMCrashMonitorClass::getResetDescription() {
     return result;
 }
 
-void SAMCrashMonitorClass::dump(Print &destination) {
-    int resetFlag = this->getResetCause();
-    String reason = this->getResetDescription();
-    destination.println(F("========================================="));
-    destination.println();
-    destination.print(F("Reset reason: "));
-    destination.print(resetFlag);
-    destination.print(F(", "));
-    destination.println(reason);
-    destination.println(F("========================================="));
+void SAMCrashMonitor::dump() {
+    int resetFlag = SAMCrashMonitor::getResetCause();
+    String reason = SAMCrashMonitor::getResetDescription();
+    Serial.println(F("========================================="));
+    Serial.println();
+    Serial.print(F("Reset reason: "));
+    Serial.print(resetFlag);
+    Serial.print(F(", "));
+    Serial.println(reason);
+    Serial.println(F("========================================="));
 }
 
-SAMCrashMonitorClass SAMCrashMonitor;
+void SAMCrashMonitor::printValue(const __FlashStringHelper *pLabel, uint32_t uValue, uint8_t uRadix, bool newLine) {
+    Serial.print(pLabel);
+    Serial.print(uValue, uRadix);
+    if (newLine) {
+        Serial.println();
+    }
+}
+
+void SAMCrashMonitor::dumpCrash(SAMCrashReport &report) {
+    Serial.println();
+    Serial.println(F("======== CRASH REPORT ========"));
+    SAMCrashMonitor::printValue(F(":r0=0x"), report.r0, BIN, true);
+    SAMCrashMonitor::printValue(F(":r1=0x"), report.r1, BIN, true);
+    SAMCrashMonitor::printValue(F(":r2=0x"), report.r2, BIN, true);
+    SAMCrashMonitor::printValue(F(":r3=0x"), report.r3, BIN, true);
+    SAMCrashMonitor::printValue(F(":r12=0x"), report.r12, BIN, true);
+    SAMCrashMonitor::printValue(F(":lr=0x"), report.lr, BIN, true);
+    SAMCrashMonitor::printValue(F(":pc=0x"), report.pc, BIN, false);
+    Serial.println(F(" <<< Crash address"));
+    SAMCrashMonitor::printValue(F(":psr=0x"), report.psr, BIN, true);
+    SAMCrashMonitor::printValue(F(":cfsr=0x"), report.cfsr, BIN, true);
+    SAMCrashMonitor::printValue(F(":hfsr=0x"), report.hfsr, BIN, true);
+    SAMCrashMonitor::printValue(F(":dfsr=0x"), report.dfsr, BIN, true);
+    SAMCrashMonitor::printValue(F(":afsr=0x"), report.afsr, BIN, true);
+    SAMCrashMonitor::printValue(F(":mmar=0x"), report.mmar, BIN, true);
+    SAMCrashMonitor::printValue(F(":bfar=0x"), report.bfar, BIN, true);
+    Serial.println(F("=============================="));
+    Serial.println();
+}

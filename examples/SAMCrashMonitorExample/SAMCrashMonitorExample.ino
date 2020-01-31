@@ -4,11 +4,12 @@
 void setup() {
     Serial.begin(9600);
     Serial.println();
-    SAMCrashMonitor.dump(Serial);
+    SAMCrashMonitor::begin();
+    SAMCrashMonitor::dump();
     Serial.println();
     
     Serial.println(F("Enabling watchdog."));
-    int timeout = SAMCrashMonitor.enableWatchdog(4000);
+    int timeout = SAMCrashMonitor::enableWatchdog(4000);
     Serial.print(F("Watchdog enabled for "));
     Serial.print(timeout);
     Serial.println(" ms.");
@@ -19,16 +20,16 @@ void setup() {
         Serial.print(F("Loop #"));
         Serial.println(i);
         delay(1000);
-        SAMCrashMonitor.iAmAlive();
+        SAMCrashMonitor::iAmAlive();
     }
 
     Serial.println();
     Serial.println(F("Disabling watchdog..."));
     Serial.println();
-    SAMCrashMonitor.disableWatchdog();
+    SAMCrashMonitor::disableWatchdog();
 
     Serial.println(F("Second test: Exceed timeout and reset."));
-    timeout = SAMCrashMonitor.enableWatchdog(4000);
+    timeout = SAMCrashMonitor::enableWatchdog(4000);
     Serial.print(F("Watchdog will reset controller in "));
     Serial.print(timeout);
     Serial.println(" ms!");
@@ -38,5 +39,5 @@ void setup() {
 }
 
 void loop() {
-    // Normally, you would place a call to SAMCrashMonitor.iAmAlive() in here.
+    // Normally, you would place a call to SAMCrashMonitor::iAmAlive() in here.
 }
