@@ -14,39 +14,9 @@ void WDT_Handler(void) {
     WDT->INTFLAG.bit.EW  = 1;        // Clear interrupt flag
 }
 
-// void HardFault_Handler(void) {
-//     __asm volatile
-//     (
-//         " .syntax unified\n"
-//         " tst lr, #4                                                \n"
-//         " ite eq                                                    \n"
-//         " mrseq r0, msp                                             \n"
-//         " mrsne r0, psp                                             \n"
-//         " ldr r1, [r0, #24]                                         \n"
-//         " ldr r2, handler2_address_const                            \n"
-//         " bx r2                                                     \n"
-//         " handler2_address_const: .word prvGetRegistersFromStack    \n"
-//         " .syntax divided\n"
-//     );
-// }
-
-// void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress) {
-//     // Build a crash report from the data in the registers and dump it.
-//     SAMCrashReport report;
-//     report.r0 = pulFaultStackAddress[0];
-//     report.r1 = pulFaultStackAddress[1];
-//     report.r2 = pulFaultStackAddress[2];
-//     report.r3 = pulFaultStackAddress[3];
-//     report.r12 = pulFaultStackAddress[4];
-//     report.lr = pulFaultStackAddress[5];
-//     report.pc = pulFaultStackAddress[6];
-//     report.psr = pulFaultStackAddress[7];
-//     SAMCrashMonitor::dumpCrash(report);
-// }
-
 // Use the 'naked' attribute so that C stacking is not used.
 __attribute__((naked))
-void HardFault_HandlerAsm(void){
+void HardFault_HandlerAsm(void) {
     /*
     * Get the appropriate stack pointer, depending on our mode,
     * and use it as the parameter to the C handler. This function
@@ -76,7 +46,7 @@ void HardFault_HandlerAsm(void){
  * cause of the fault.
  * The function ends with a BKPT instruction to force control back into the debugger
  */
-void HardFault_HandlerC(unsigned long *hardfault_args){
+void HardFault_HandlerC(unsigned long *hardfault_args) {
     SAMCrashReport report;
     report.r0 = ((unsigned long)hardfault_args[0]);
     report.r1 = ((unsigned long)hardfault_args[1]);

@@ -6,17 +6,19 @@
 # Datatypes (KEYWORD1)
 #######################################
 SAMCrashMonitor
-SAMCrashMonitorClass
+SAMCrashReport
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
+begin
 enableWatchdog
 disableWatchdog
 iAmAlive
 getResetCause
 getResetDescription
 dump
+dumpCrash
 
 #######################################
 # Constants (LITERAL1)
