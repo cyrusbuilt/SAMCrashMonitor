@@ -2,37 +2,40 @@
 #include "SAMCrashMonitor.h"
 
 void setup() {
-    Serial.begin(9600);
-    Serial.println();
+    // The following 2 lines are *REQUIRED* to properly init Serial monitor.
+    SerialUSB.begin(9600);
+    while(!SerialUSB);
+    
+    SerialUSB.println();
     SAMCrashMonitor::begin();
     SAMCrashMonitor::dump();
-    Serial.println();
+    SerialUSB.println();
     
-    Serial.println(F("Enabling watchdog."));
+    SerialUSB.println(F("Enabling watchdog."));
     int timeout = SAMCrashMonitor::enableWatchdog(4000);
-    Serial.print(F("Watchdog enabled for "));
-    Serial.print(timeout);
-    Serial.println(" ms.");
+    SerialUSB.print(F("Watchdog enabled for "));
+    SerialUSB.print(timeout);
+    SerialUSB.println(" ms.");
     
-    Serial.println();
-    Serial.println(F("First test: Looping once per second for 5 seconds while feeding watchdog..."));
+    SerialUSB.println();
+    SerialUSB.println(F("First test: Looping once per second for 5 seconds while feeding watchdog..."));
     for (int i = 1; i <= 5; i++) {
-        Serial.print(F("Loop #"));
-        Serial.println(i);
+        SerialUSB.print(F("Loop #"));
+        SerialUSB.println(i);
         delay(1000);
         SAMCrashMonitor::iAmAlive();
     }
 
-    Serial.println();
-    Serial.println(F("Disabling watchdog..."));
-    Serial.println();
+    SerialUSB.println();
+    SerialUSB.println(F("Disabling watchdog..."));
+    SerialUSB.println();
     SAMCrashMonitor::disableWatchdog();
 
-    Serial.println(F("Second test: Exceed timeout and reset."));
+    SerialUSB.println(F("Second test: Exceed timeout and reset."));
     timeout = SAMCrashMonitor::enableWatchdog(4000);
-    Serial.print(F("Watchdog will reset controller in "));
-    Serial.print(timeout);
-    Serial.println(" ms!");
+    SerialUSB.print(F("Watchdog will reset controller in "));
+    SerialUSB.print(timeout);
+    SerialUSB.println(" ms!");
     delay(timeout + 1000);
 
     // We shouldn't get this far since the watchdog should reset the MCU.
