@@ -19,12 +19,13 @@ a Serial port. Most of the code in this version of the library was taken from [A
 - 2) This library does not depend on [Adafruit ASFCore](https://github.com/adafruit/Adafruit_ASFcore), except when using the SAM D51 variant.
 - 3) This library provides descriptions for reset cause codes and a means to dump both the code and description to the Serial port.
 - 4) This library does not make use of a sleep() function.
+- 5) This library also includes a hard fault handler for when the MCU crashes which will dump crash data to the Serial monitor just before reset.
 
 Specifics regarding the SAM D-series Watchdog registers and reset codes can be found in the [datasheet](https://cdn.sparkfun.com/datasheets/Dev/Arduino/Boards/Atmel-42181-SAM-D21_Datasheet.pdf).
 
 ## How to install
 
-For PlatformIO:
+For PlatformIO (coming soon):
 ```bash
 $ pio lib install SAMCrashMonitor
 ```
@@ -45,18 +46,28 @@ see the example below:
 bool firstLoopDone = false;
 
 void setup() {
-    Serial.begin(9600);
-    SAMCrashMonitor.disableWatchdog(); // Make sure it is turned off during init.
-    SAMCrashMonitor.dump(Serial);      // Dump any crash data to the console.
+    SerialUSB.begin(9600);
+    while (!SerialUSB);
 
-    // Turn the watchdog on. NOTE: For now the time parameter is isn't relevant.
-    SAMCrashMonitor.enableWatchdog(2000);
+    SAMCrashMonitor::disableWatchdog(); // Make sure it is turned off during init.
+    SAMCrashMonitor::dump();            // Dump watchdog reset data to the console.
+
+    // Turn the watchdog on and get actual timeout value based on the provided one.
+    int timeout = SAMCrashMonitor::enableWatchdog(2000);
+    SerialUSB.print(F("Watchdog enabled for: "));
+    SerialUSB.print(timeout);
+    SerialUSB.println(F(" ms"));
+
+    // Also if a hard fault occurs in your sketch (such as divide-by-zero),
+    // then crash data (including the address of the instruction that caused
+    // the crash) will be dumped to the serial monitor automatically *PRIOR*
+    // to reset.
 }
 
 void loop() {
     if (!firstLoopDone) {
         // On the first loop, tell the crash monitor we are alive so we get the full timeout.
-        SAMCrashMonitor.iAmAlive();
+        SAMCrashMonitor::iAmAlive();
         firstLoopDone = true;
     }
     else {
