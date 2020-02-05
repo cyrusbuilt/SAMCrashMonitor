@@ -14,36 +14,6 @@ void WDT_Handler(void) {
     WDT->INTFLAG.bit.EW  = 1;        // Clear interrupt flag
 }
 
-// void HardFault_Handler(void) {
-//     __asm volatile
-//     (
-//         " .syntax unified\n"
-//         " tst lr, #4                                                \n"
-//         " ite eq                                                    \n"
-//         " mrseq r0, msp                                             \n"
-//         " mrsne r0, psp                                             \n"
-//         " ldr r1, [r0, #24]                                         \n"
-//         " ldr r2, handler2_address_const                            \n"
-//         " bx r2                                                     \n"
-//         " handler2_address_const: .word prvGetRegistersFromStack    \n"
-//         " .syntax divided\n"
-//     );
-// }
-
-// void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress) {
-//     // Build a crash report from the data in the registers and dump it.
-//     SAMCrashReport report;
-//     report.r0 = pulFaultStackAddress[0];
-//     report.r1 = pulFaultStackAddress[1];
-//     report.r2 = pulFaultStackAddress[2];
-//     report.r3 = pulFaultStackAddress[3];
-//     report.r12 = pulFaultStackAddress[4];
-//     report.lr = pulFaultStackAddress[5];
-//     report.pc = pulFaultStackAddress[6];
-//     report.psr = pulFaultStackAddress[7];
-//     SAMCrashMonitor::dumpCrash(report);
-// }
-
 // Use the 'naked' attribute so that C stacking is not used.
 __attribute__((naked))
 void HardFault_HandlerAsm(void){
@@ -342,26 +312,26 @@ String SAMCrashMonitor::getResetDescription() {
 void SAMCrashMonitor::dump() {
     int resetFlag = SAMCrashMonitor::getResetCause();
     String reason = SAMCrashMonitor::getResetDescription();
-    Serial.println(F("========================================="));
-    Serial.println();
-    Serial.print(F("Reset reason: "));
-    Serial.print(resetFlag);
-    Serial.print(F(", "));
-    Serial.println(reason);
-    Serial.println(F("========================================="));
+    SerialUSB.println(F("========================================="));
+    SerialUSB.println();
+    SerialUSB.print(F("Reset reason: "));
+    SerialUSB.print(resetFlag);
+    SerialUSB.print(F(", "));
+    SerialUSB.println(reason);
+    SerialUSB.println(F("========================================="));
 }
 
 void SAMCrashMonitor::printValue(const __FlashStringHelper *pLabel, uint32_t uValue, uint8_t uRadix, bool newLine) {
-    Serial.print(pLabel);
-    Serial.print(uValue, uRadix);
+    SerialUSB.print(pLabel);
+    SerialUSB.print(uValue, uRadix);
     if (newLine) {
-        Serial.println();
+        SerialUSB.println();
     }
 }
 
 void SAMCrashMonitor::dumpCrash(SAMCrashReport &report) {
-    Serial.println();
-    Serial.println(F("======== CRASH REPORT ========"));
+    SerialUSB.println();
+    SerialUSB.println(F("======== CRASH REPORT ========"));
     SAMCrashMonitor::printValue(F(":r0=0x"), report.r0, BIN, true);
     SAMCrashMonitor::printValue(F(":r1=0x"), report.r1, BIN, true);
     SAMCrashMonitor::printValue(F(":r2=0x"), report.r2, BIN, true);
@@ -369,7 +339,7 @@ void SAMCrashMonitor::dumpCrash(SAMCrashReport &report) {
     SAMCrashMonitor::printValue(F(":r12=0x"), report.r12, BIN, true);
     SAMCrashMonitor::printValue(F(":lr=0x"), report.lr, BIN, true);
     SAMCrashMonitor::printValue(F(":pc=0x"), report.pc, BIN, false);
-    Serial.println(F(" <<< Crash address"));
+    SerialUSB.println(F(" <<< Crash address"));
     SAMCrashMonitor::printValue(F(":psr=0x"), report.psr, BIN, true);
     SAMCrashMonitor::printValue(F(":cfsr=0x"), report.cfsr, BIN, true);
     SAMCrashMonitor::printValue(F(":hfsr=0x"), report.hfsr, BIN, true);
@@ -377,6 +347,6 @@ void SAMCrashMonitor::dumpCrash(SAMCrashReport &report) {
     SAMCrashMonitor::printValue(F(":afsr=0x"), report.afsr, BIN, true);
     SAMCrashMonitor::printValue(F(":mmar=0x"), report.mmar, BIN, true);
     SAMCrashMonitor::printValue(F(":bfar=0x"), report.bfar, BIN, true);
-    Serial.println(F("=============================="));
-    Serial.println();
+    SerialUSB.println(F("=============================="));
+    SerialUSB.println();
 }
