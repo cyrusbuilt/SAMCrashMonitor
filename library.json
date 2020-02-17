@@ -16,7 +16,7 @@
     },
     "version": "1.0.0",
     "license": "MIT",
-    "downloadUrl": "https://github.com/cyrusbuilt/SAMCrashMonitor/archive/master.zip",
+    "downloadUrl": "https://github.com/cyrusbuilt/SAMCrashMonitor/archive/v1.0.0.zip",
     "frameworks": "arduino",
     "platforms": "atmelsam"
 }
