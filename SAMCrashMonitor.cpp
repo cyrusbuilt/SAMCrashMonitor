@@ -46,7 +46,7 @@ void HardFault_HandlerAsm(void){
  * cause of the fault.
  * The function ends with a BKPT instruction to force control back into the debugger
  */
-void HardFault_HandlerC(unsigned long *hardfault_args){
+void HardFault_HandlerC(unsigned long *hardfault_args) {
     SAMCrashReport report;
     report.r0 = ((unsigned long)hardfault_args[0]);
     report.r1 = ((unsigned long)hardfault_args[1]);
@@ -74,16 +74,23 @@ void HardFault_HandlerC(unsigned long *hardfault_args){
     // Check BFARVALID/MMARVALID to see if they are valid values
     // MemManage Fault Address Register
     report.mmar = (*((volatile unsigned long *)(0xE000ED34)));
+
     // Bus Fault Address Register
     report.bfar = (*((volatile unsigned long *)(0xE000ED38)));
 
     // Dump the whole report to Serial.
     SAMCrashMonitor::dumpCrash(report);
 
+    // If the user specified a crash handler callback, execute it now.
+    if (SAMCrashMonitor::userCrashHandler != NULL) {
+        SAMCrashMonitor::userCrashHandler(report);
+    }
+
     NVIC_SystemReset();
 }
 
 bool SAMCrashMonitor::_initialized = false;
+UserCrashHandler SAMCrashMonitor::userCrashHandler = NULL;
 
 void SAMCrashMonitor::initWatchdog() {
     if (SAMCrashMonitor::_initialized) { return; }
@@ -147,7 +154,7 @@ int SAMCrashMonitor::enableWatchdog(int maxPeriodMS) {
     // Review the watchdog section from the SAMD21 datasheet section 17:
     // http://www.atmel.com/images/atmel-42181-sam-d21_datasheet.pdf
 
-    int     cycles;
+    int cycles;
     uint8_t bits;
 
     #ifdef __SAMD51__
@@ -349,4 +356,8 @@ void SAMCrashMonitor::dumpCrash(SAMCrashReport &report) {
     SAMCrashMonitor::printValue(F(":bfar=0x"), report.bfar, BIN, true);
     SerialUSB.println(F("=============================="));
     SerialUSB.println();
+}
+
+void SAMCrashMonitor::setUserCrashHandler(UserCrashHandler handler) {
+    SAMCrashMonitor::userCrashHandler = handler;
 }
