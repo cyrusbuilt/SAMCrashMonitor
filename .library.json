@@ -9,7 +9,7 @@
     "examples": [
         "examples/*/*.ino"
     ],
-    "version": "1.0.0",
+    "version": "1.0.1",
     "authors": [
         {
             "url": "http://cyrusbuilt.net",

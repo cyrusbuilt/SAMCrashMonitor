@@ -1,25 +1,22 @@
 #include "SAMCrashMonitor.h"
 #include <samd.h>
 
-void WDT_Handler(void)
-{
+void WDT_Handler(void) {
 // ISR for watchdog early warning, DO NOT RENAME!
 #if defined(__SAMD51__)
     WDT->CTRLA.bit.ENABLE = 0; // Disable watchdog
-    while (WDT->SYNCBUSY.reg)
-        ;
+    while (WDT->SYNCBUSY.reg);
 #else
     WDT->CTRL.bit.ENABLE = 0; // Disable watchdog
-    while (WDT->STATUS.bit.SYNCBUSY)
-        ; // Sync CTRL write
+    while (WDT->STATUS.bit.SYNCBUSY); // Sync CTRL write
 #endif
 
     WDT->INTFLAG.bit.EW = 1; // Clear interrupt flag
 }
 
 // Use the 'naked' attribute so that C stacking is not used.
-__attribute__((naked)) void HardFault_HandlerAsm(void)
-{
+__attribute__((naked))
+void HardFault_HandlerAsm(void) {
     /*
     * Get the appropriate stack pointer, depending on our mode,
     * and use it as the parameter to the C handler. This function
@@ -94,10 +91,8 @@ void HardFault_HandlerC(unsigned long *hardfault_args) {
 bool SAMCrashMonitor::_initialized = false;
 UserCrashHandler SAMCrashMonitor::userCrashHandler = NULL;
 
-void SAMCrashMonitor::initWatchdog()
-{
-    if (SAMCrashMonitor::_initialized)
-    {
+void SAMCrashMonitor::initWatchdog() {
+    if (SAMCrashMonitor::_initialized) {
         return;
     }
 
@@ -113,16 +108,13 @@ void SAMCrashMonitor::initWatchdog()
     NVIC_SetPriority(WDT_IRQn, 0); // Top priority
     NVIC_EnableIRQ(WDT_IRQn);
 
-    while (WDT->SYNCBUSY.reg)
-        ;
+    while (WDT->SYNCBUSY.reg);
 
     USB->DEVICE.CTRLA.bit.ENABLE = 0; // Disable the USB peripheral
-    while (USB->DEVICE.SYNCBUSY.bit.ENABLE)
-        ;                               // Wait for synchronization
+    while (USB->DEVICE.SYNCBUSY.bit.ENABLE);                               // Wait for synchronization
     USB->DEVICE.CTRLA.bit.RUNSTDBY = 0; // Deactivate run on standby
     USB->DEVICE.CTRLA.bit.ENABLE = 1;   // Enable the USB peripheral
-    while (USB->DEVICE.SYNCBUSY.bit.ENABLE)
-        ; // Wait for synchronization
+    while (USB->DEVICE.SYNCBUSY.bit.ENABLE); // Wait for synchronization
 #else
     // Generic clock generator 2, divisor = 32 (2^(DIV+1))
     GCLK->GENDIV.reg = GCLK_GENDIV_ID(2) | GCLK_GENDIV_DIV(4);
@@ -133,8 +125,7 @@ void SAMCrashMonitor::initWatchdog()
                         GCLK_GENCTRL_GENEN |
                         GCLK_GENCTRL_SRC_OSCULP32K |
                         GCLK_GENCTRL_DIVSEL;
-    while (GCLK->STATUS.bit.SYNCBUSY)
-        ;
+    while (GCLK->STATUS.bit.SYNCBUSY);
 
     // WDT clock = clock gen 2
     GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_WDT |
@@ -151,16 +142,13 @@ void SAMCrashMonitor::initWatchdog()
     SAMCrashMonitor::_initialized = true;
 }
 
-void SAMCrashMonitor::begin()
-{
-    if (!SAMCrashMonitor::_initialized)
-    {
+void SAMCrashMonitor::begin() {
+    if (!SAMCrashMonitor::_initialized) {
         SAMCrashMonitor::initWatchdog();
     }
 }
 
-int SAMCrashMonitor::enableWatchdog(int maxPeriodMS)
-{
+int SAMCrashMonitor::enableWatchdog(int maxPeriodMS) {
     // Enable the watchdog with a period up to the specified max period in
     // milliseconds.
 
@@ -172,12 +160,10 @@ int SAMCrashMonitor::enableWatchdog(int maxPeriodMS)
 
 #ifdef __SAMD51__
     WDT->CTRLA.reg = 0; // Disable watchdog for config
-    while (WDT->SYNCBUSY.reg)
-        ;
+    while (WDT->SYNCBUSY.reg);
 #else
     WDT->CTRL.reg = 0; // Disable watchdog for config
-    while (WDT->STATUS.bit.SYNCBUSY)
-        ;
+    while (WDT->STATUS.bit.SYNCBUSY);
 #endif
 
     // You'll see some occasional conversion here compensating between
@@ -185,66 +171,53 @@ int SAMCrashMonitor::enableWatchdog(int maxPeriodMS)
     // power oscillator used by the WDT ostensibly runs at 32,768 Hz with
     // a 1:32 prescale, thus 1024 Hz, though probably not super precise.
 
-    if ((maxPeriodMS >= 16000) || !maxPeriodMS)
-    {
+    if ((maxPeriodMS >= 16000) || !maxPeriodMS) {
         cycles = 16384;
         bits = 0xB;
     }
-    else
-    {
+    else {
         cycles = (maxPeriodMS * 1024L + 500) / 1000; // ms -> WDT cycles
-        if (cycles >= 8192)
-        {
+        if (cycles >= 8192) {
             cycles = 8192;
             bits = 0xA;
         }
-        else if (cycles >= 4096)
-        {
+        else if (cycles >= 4096) {
             cycles = 4096;
             bits = 0x9;
         }
-        else if (cycles >= 2048)
-        {
+        else if (cycles >= 2048) {
             cycles = 2048;
             bits = 0x8;
         }
-        else if (cycles >= 1024)
-        {
+        else if (cycles >= 1024) {
             cycles = 1024;
             bits = 0x7;
         }
-        else if (cycles >= 512)
-        {
+        else if (cycles >= 512) {
             cycles = 512;
             bits = 0x6;
         }
-        else if (cycles >= 256)
-        {
+        else if (cycles >= 256) {
             cycles = 256;
             bits = 0x5;
         }
-        else if (cycles >= 128)
-        {
+        else if (cycles >= 128) {
             cycles = 128;
             bits = 0x4;
         }
-        else if (cycles >= 64)
-        {
+        else if (cycles >= 64) {
             cycles = 64;
             bits = 0x3;
         }
-        else if (cycles >= 32)
-        {
+        else if (cycles >= 32) {
             cycles = 32;
             bits = 0x2;
         }
-        else if (cycles >= 16)
-        {
+        else if (cycles >= 16) {
             cycles = 16;
             bits = 0x1;
         }
-        else
-        {
+        else {
             cycles = 8;
             bits = 0x0;
         }
@@ -281,54 +254,44 @@ int SAMCrashMonitor::enableWatchdog(int maxPeriodMS)
 
     SAMCrashMonitor::iAmAlive(); // Clear watchdog interval
     WDT->CTRLA.bit.ENABLE = 1;   // Start watchdog now!
-    while (WDT->SYNCBUSY.reg)
-        ;
+    while (WDT->SYNCBUSY.reg);
 #else
     WDT->INTENCLR.bit.EW = 1;   // Disable early warning interrupt
     WDT->CONFIG.bit.PER = bits; // Set period for chip reset
     WDT->CTRL.bit.WEN = 0;      // Disable window mode
-    while (WDT->STATUS.bit.SYNCBUSY)
-        ; // Sync CTRL write
+    while (WDT->STATUS.bit.SYNCBUSY); // Sync CTRL write
 
     SAMCrashMonitor::iAmAlive(); // Clear watchdog interval
     WDT->CTRL.bit.ENABLE = 1;    // Start watchdog now!
-    while (WDT->STATUS.bit.SYNCBUSY)
-        ;
+    while (WDT->STATUS.bit.SYNCBUSY);
 #endif
 
     return (cycles * 1000L + 512) / 1024; // WDT cycles -> ms
 }
 
-void SAMCrashMonitor::disableWatchdog()
-{
+void SAMCrashMonitor::disableWatchdog() {
 #ifdef __SAMD51__
     WDT->CTRLA.bit.ENABLE = 0;
-    while (WDT->SYNCBUSY.reg)
-        ;
+    while (WDT->SYNCBUSY.reg);
 #else
     WDT->CTRL.bit.ENABLE = 0;
-    while (WDT->STATUS.bit.SYNCBUSY)
-        ;
+    while (WDT->STATUS.bit.SYNCBUSY);
 #endif
 }
 
-void SAMCrashMonitor::iAmAlive()
-{
+void SAMCrashMonitor::iAmAlive() {
 // Write the watchdog clear key value (0xA5) to the watchdog
 // clear register to clear the watchdog timer and reset it.
 #ifdef __SAMD51__
-    while (WDT->SYNCBUSY.reg)
-        ;
+    while (WDT->SYNCBUSY.reg);
 #else
-    while (WDT->STATUS.bit.SYNCBUSY)
-        ;
+    while (WDT->STATUS.bit.SYNCBUSY);
 #endif
 
     WDT->CLEAR.reg = WDT_CLEAR_CLEAR_KEY;
 }
 
-uint8_t SAMCrashMonitor::getResetCause()
-{
+uint8_t SAMCrashMonitor::getResetCause() {
 #ifdef __SAMD51__
     return RSTC->RCAUSE.reg;
 #else
@@ -336,12 +299,10 @@ uint8_t SAMCrashMonitor::getResetCause()
 #endif
 }
 
-String SAMCrashMonitor::getResetDescription()
-{
+String SAMCrashMonitor::getResetDescription() {
     uint8_t cause = SAMCrashMonitor::getResetCause();
     String result;
-    switch (cause)
-    {
+    switch (cause) {
 #ifdef __SAMD51__
     case RSTC_RCAUSE_SYST:
         result = "Reset requested by system";
@@ -398,8 +359,7 @@ String SAMCrashMonitor::getResetDescription()
     return result;
 }
 
-void SAMCrashMonitor::dump()
-{
+void SAMCrashMonitor::dump() {
     int resetFlag = SAMCrashMonitor::getResetCause();
     String reason = SAMCrashMonitor::getResetDescription();
     SerialUSB.println(F("========================================="));
@@ -411,18 +371,15 @@ void SAMCrashMonitor::dump()
     SerialUSB.println(F("========================================="));
 }
 
-void SAMCrashMonitor::printValue(const __FlashStringHelper *pLabel, uint32_t uValue, uint8_t uRadix, bool newLine)
-{
+void SAMCrashMonitor::printValue(const __FlashStringHelper *pLabel, uint32_t uValue, uint8_t uRadix, bool newLine) {
     SerialUSB.print(pLabel);
     SerialUSB.print(uValue, uRadix);
-    if (newLine)
-    {
+    if (newLine) {
         SerialUSB.println();
     }
 }
 
-void SAMCrashMonitor::dumpCrash(SAMCrashReport &report)
-{
+void SAMCrashMonitor::dumpCrash(SAMCrashReport &report) {
     SerialUSB.println();
     SerialUSB.println(F("======== CRASH REPORT ========"));
     SAMCrashMonitor::printValue(F(":r0=0x"), report.r0, BIN, true);

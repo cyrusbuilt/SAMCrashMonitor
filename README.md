@@ -25,7 +25,7 @@ Specifics regarding the SAM D-series Watchdog registers and reset codes can be f
 
 ## How to install
 
-For PlatformIO (coming soon):
+For PlatformIO:
 ```bash
 $ pio lib install SAMCrashMonitor
 ```
