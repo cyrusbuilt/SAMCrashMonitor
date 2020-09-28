@@ -12,13 +12,28 @@
  */
 struct SAMCrashReport
 {
+    /**
+     * Register 0 from the stack.
+     */
     uint32_t r0;
+
+    /**
+     * Register 1 from the stack.
+     */
     uint32_t r1;
+
+    /**
+     * Register 2 from the stack.
+     */
     uint32_t r2;
+
+    /**
+     * Register 3 from the stack.
+     */
     uint32_t r3;
 
     /**
-     * 
+     * Register 12 from the stack.
      */
     uint32_t r12;
 
@@ -38,18 +53,41 @@ struct SAMCrashReport
      */
     uint32_t psr;
 
+    /**
+     * Configurable fault status register.
+     */
     uint32_t cfsr;
 
+    /**
+     * Hard fault status register.
+     */
     uint32_t hfsr;
 
+    /**
+     * Debug fault status register.
+     */
     uint32_t dfsr;
 
+    /**
+     * Auxillary fault status register.
+     */
     uint32_t afsr;
 
+    /**
+     * MemManage fault address register.
+     */
     uint32_t mmar;
 
+    /**
+     * Bus fault address register.
+     */
     uint32_t bfar;
 } __attribute__((__packed__));
+
+/**
+ * Handler method signature for a user-defined crash handler.
+ */
+typedef void (*UserCrashHandler)(SAMCrashReport &report);
 
 /**
  * Provides firmware Watchdog functionality for SAM D21/D51 variant
@@ -59,8 +97,7 @@ class SAMCrashMonitor
 {
 public:
     /**
-     * 
-     * 
+     * Initializes the monitor.
      */
     static void begin();
 
@@ -107,9 +144,26 @@ public:
     static void dump();
 
     /**
-     * 
+     * Dumps the specified crash report to the serial console.
+     * @param report The crash report to dump.
      */
     static void dumpCrash(SAMCrashReport &report);
+
+    /**
+     * Sets the user crash handler. The specified handler will get called
+     * any time the hard fault interrupt is triggered.
+     * @param handler The callback method to execute.
+     * @note It is important to keep the implmentation logic in the specified
+     * handler as short as possible and execute as fast as possible. If your
+     * callback takes too long to execute, it may not finish before the MCU
+     * resets.
+     */
+    static void setUserCrashHandler(UserCrashHandler handler);
+
+    /**
+     * The user-defined crash handler if set; Otherwise, NULL.
+     */
+    static UserCrashHandler userCrashHandler;
 
 private:
     static void initWatchdog();
