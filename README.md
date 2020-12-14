@@ -49,6 +49,7 @@ void setup() {
     SerialUSB.begin(9600);
     while (!SerialUSB);
 
+    SAMCrashMonitor::begin();
     SAMCrashMonitor::disableWatchdog(); // Make sure it is turned off during init.
     SAMCrashMonitor::dump();            // Dump watchdog reset data to the console.
 
