@@ -1,7 +1,7 @@
 # SAMCrashMonitor
 SAM-series compatible Crash Monitor library for Arduino compatible with SAM D21/D51 variants.
 
-[![Build Status](https://travis-ci.com/cyrusbuilt/SAMCrashMonitor.svg?branch=master)](https://travis-ci.com/cyrusbuilt/SAMCrashMonitor)
+![Build Status](https://github.com/cyrusbuilt/SAMCrashMonitor/actions/workflows/ci.yml/badge.svg)
 
 ## Description
 
@@ -12,7 +12,7 @@ cause of a reset in the event that the Arduino sketch
 initialize, main loop hangs, etc). The general idea behind this is: during each iteration of loop(), CrashMonitor's iAmAlive() method should be called to signal to
 CrashMonitor that the sketch is still running. If CrashMonitor does not
 receive the iAmAlive() signal before the end of the timeout, then the built-in
-watchdog will reset store information about the crash and reset the device.
+watchdog will store information about the crash and reset the device.
 You can then use the dump() method to load the crash reports and dump them to
 a Serial port. Most of the code in this version of the library was taken from [Adafruit's SleepyDog Library](https://github.com/adafruit/Adafruit_SleepyDog). Key differences between this library and Adafruit's is:
 - 1) This library *only* supports the SAM D21/D51.

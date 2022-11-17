@@ -4,7 +4,7 @@ DIR           := $(PWD)/examples
 CRITERIA      := \( -name "*.ino" -o -name "*.pde" \)
 EACH_EXAMPLE  := $(FIND) $(DIR) $(CRITERIA) -exec
 BUILD         := pio ci --verbose
-LIB           := "."
+LIB           := "./src"
 
 #--------------------------------------------------------------------- targets
 clean_docs:
