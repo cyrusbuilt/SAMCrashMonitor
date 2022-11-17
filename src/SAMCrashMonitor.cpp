@@ -224,7 +224,7 @@ int SAMCrashMonitor::enableWatchdog(int maxPeriodMS) {
     }
 
     // Watchdog timer on SAMD is a slightly different animal than on AVR.
-    // On AVR, the WTD timeout is configured in one register and then an
+    // On AVR, the WDT timeout is configured in one register and then an
     // interrupt can optionally be enabled to handle the timeout in code
     // (as in waking from sleep) vs resetting the chip.  Easy.
     // On SAMD, when the WDT fires, that's it, the chip's getting reset.

@@ -2,8 +2,8 @@
 #define SAMCrashMonitor_h
 
 #include <Arduino.h>
-#if !defined(SAMD_SERIES)
-    #error "This library is currently on compatible with SAM D21 & D51-based MCUs."
+#ifndef ARDUINO_ARCH_SAMD
+    #error "This library is currently only compatible with SAM D21 & D51-based MCUs."
 #endif
 
 /**
